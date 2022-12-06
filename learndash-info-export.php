@@ -16,4 +16,6 @@ if (!defined('ABSPATH')) {
 
 //charger le code se trouvant dans d'autres fichiers
 require_once __DIR__ . '/includes/role_and_capabilities.php';
+// require_once __DIR__ . '/includes/courses.php';
 require_once __DIR__ . '/includes/learndash-info-export-main-functions.php';
+// 
