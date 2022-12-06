@@ -281,6 +281,7 @@ function export_learndash_courses()
  */
 function my_custom_menu_page()
 {
+    echo '<div id="wpbody-content"><div class="wrap"> <h1 class="wp-heading-inline">Exporter les informations des utilisateurs</h1><br>';
     echo export_learndash_courses();
     echo export_learndash_groupes();
 }
