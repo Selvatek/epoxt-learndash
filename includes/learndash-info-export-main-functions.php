@@ -7,9 +7,9 @@ function learndash_get_all_groups_ids()
         'post_type'         =>   'groups',
         'post_status'       =>   'publish',
         'posts_per_page'    =>      -1,
-       
+
     );
-    
+
     $query = new WP_Query($query_args);
 
     if ($query instanceof WP_Query) {
@@ -19,8 +19,8 @@ function learndash_get_all_groups_ids()
 //this function is made to export csv
 function export_learndash_groupes()
 {
-     $leardashGroupes = learndash_get_all_groups_ids(); //put courses into variable
-     
+    $leardashGroupes = learndash_get_all_groups_ids(); //put courses into variable
+
     //menu html déroulant
     echo '<label for="course-select">Choisir un Groupe:</label><form action="" method="post"><select name="groupeSelected" id="groupeSelected"><option value="">--Groupes--</option>';
     //interieur du menu deroulant
@@ -47,38 +47,8 @@ function export_learndash_groupes()
             fputcsv($outstream, $fields); //ajouter cette premiere ligne au fichier
             $userFromThisGroup = learndash_get_groups_user_ids($groupid);
             foreach ($userFromThisGroup as $user_ID) { //pour chaque utilisateur
-                if (!user_has_role($user_ID, 'ritesdefemmes') or !user_has_role($user_ID, 'administrator')) { //si ne fait pas parti de l'equipe alors
-                    //remise a zero des variables
-                    $titresName = '';
-                    $countItem = 0;
-                    //retrouver toutes les commandes d'un client
-                    $customer_orders = get_posts(array(
-                        'numberposts' => -1,
-                        'meta_key' => '_customer_user',
-                        'orderby' => 'date',
-                        'order' => 'DESC',
-                        'meta_value' => $user_ID,
-                        'post_type' => wc_get_order_types(),
-                        'post_status' => array_keys(wc_get_order_statuses()),
-                    ));
-                    $Order_Array = array();
-                    //traiter chaque commande
-                    foreach ($customer_orders as $customer_order) {
-                        $orderq = wc_get_order($customer_order);
-                        $Order_Array[] = [
-                            "ID" => $orderq->get_id(),
-                            "Value" => $orderq->get_total(),
-                            "Date" => $orderq->get_date_created()->date_i18n('Y-m-d'),
-                            "items" => $orderq->get_items(),
-                        ];
-                        foreach ($orderq->get_items() as $item_key => $item) {
-                            if ($countItem > 0) {
-                                $titresName =  $titresName . "\r";
-                            }
-                            $titresName =  $titresName . $orderq->get_date_created()->date_i18n('d-m-Y') . ": " . $item->get_name();
-                            $countItem = +1;
-                        }
-                    }
+                if (!user_has_role($user_ID, 'ritesdefemmes') ) { //si ne fait pas parti de l'equipe alors
+                   
                     $fields = array();
                     $userinfo = $courseName;
                     array_push($fields, $user_ID);
@@ -92,7 +62,7 @@ function export_learndash_groupes()
                     array_push($fields, $userinfo);
                     $userinfo = $user->billing_address_1 . ", " . $user->billing_postcode . ", " . $user->billing_city;
                     array_push($fields, $userinfo);
-                    array_push($fields, $titresName);
+                    array_push($fields, articlesAchete($user_ID));
                     $phone = $user->billing_phone;
                     array_push($fields, $phone);
                     fputcsv($outstream, $fields);  //output the user info line to the csv file
@@ -106,12 +76,12 @@ function export_learndash_groupes()
             $countTable = 0;
             $countTable2 = 0;
             while (($line = fgetcsv($file)) !== FALSE) {
-                
+
                 //$line is an array of the csv elements
                 foreach ($line as $lin) {
                     if ($countTable == 0) {
                         if ($countTable2 == 0) {
-                            
+
                             echo '<thead>';
                             echo '<tr>';
                         }
@@ -156,6 +126,40 @@ function learndash_get_all_course_ids()
         return $query->posts;
     }
 }
+function articlesAchete($user_ID)
+{
+    $titresName = '';
+    $countItem = 0;
+    //retrouver toutes les commandes d'un client
+    $customer_orders = get_posts(array(
+        'numberposts' => -1,
+        'meta_key' => '_customer_user',
+        'orderby' => 'date',
+        'order' => 'DESC',
+        'meta_value' => $user_ID,
+        'post_type' => wc_get_order_types(),
+        'post_status' => array_keys(wc_get_order_statuses()),
+    ));
+    $Order_Array = array();
+    //traiter chaque commande
+    foreach ($customer_orders as $customer_order) {
+        $orderq = wc_get_order($customer_order);
+        $Order_Array[] = [
+            "ID" => $orderq->get_id(),
+            "Value" => $orderq->get_total(),
+            "Date" => $orderq->get_date_created()->date_i18n('Y-m-d'),
+            "items" => $orderq->get_items(),
+        ];
+        foreach ($orderq->get_items() as $item_key => $item) {
+            if ($countItem > 0) {
+                $titresName =  $titresName . "\r";
+            }
+            $titresName =  $titresName . $orderq->get_date_created()->date_i18n('d-m-Y') . ": " . $item->get_name();
+            $countItem = +1;
+        }
+    }
+    return $titresName;
+}
 //this function is made to export csv
 function export_learndash_courses()
 {
@@ -194,38 +198,8 @@ function export_learndash_courses()
             $fields = array(ID, Formation, email, Prénom, Nom, Adresse, "Date 1ere étape", "Date Dernière étape", "Étapes completées", "Dates et Produits Achatés", "téléphone"); //créer la premiere ligne du fichier csv
             fputcsv($outstream, $fields); //ajouter cette premiere ligne au fichier
             foreach ($usersFromAllGroupes as $user_ID) { //pour chaque utilisateur
-                if (!user_has_role($user_ID, 'ritesdefemmes') or !user_has_role($user_ID, 'administrator')) { //si ne fait pas parti de l'equipe alors
+                if (!user_has_role($user_ID, 'ritesdefemmes') ) { //si ne fait pas parti de l'equipe alors
                     //remise a zero des variables
-                    $titresName = '';
-                    $countItem = 0;
-                    //retrouver toutes les commandes d'un client
-                    $customer_orders = get_posts(array(
-                        'numberposts' => -1,
-                        'meta_key' => '_customer_user',
-                        'orderby' => 'date',
-                        'order' => 'DESC',
-                        'meta_value' => $user_ID,
-                        'post_type' => wc_get_order_types(),
-                        'post_status' => array_keys(wc_get_order_statuses()),
-                    ));
-                    $Order_Array = array();
-                    //traiter chaque commande
-                    foreach ($customer_orders as $customer_order) {
-                        $orderq = wc_get_order($customer_order);
-                        $Order_Array[] = [
-                            "ID" => $orderq->get_id(),
-                            "Value" => $orderq->get_total(),
-                            "Date" => $orderq->get_date_created()->date_i18n('Y-m-d'),
-                            "items" => $orderq->get_items(),
-                        ];
-                        foreach ($orderq->get_items() as $item_key => $item) {
-                            if ($countItem > 0) {
-                                $titresName =  $titresName . "\r";
-                            }
-                            $titresName =  $titresName . $orderq->get_date_created()->date_i18n('d-m-Y') . ": " . $item->get_name();
-                            $countItem = +1;
-                        }
-                    }
                     $fields = array();
                     $userinfo = $courseName;
                     array_push($fields, $user_ID);
@@ -250,7 +224,8 @@ function export_learndash_courses()
                     $coursProgress = learndash_user_get_course_progress($user_ID, $courseId, 'summary');
                     $avancement = $coursProgress['completed'] . "/" . $coursProgress['total'] . " étapes";
                     array_push($fields, $avancement);
-                    array_push($fields, $titresName);
+                    //push array article acheté
+                    array_push($fields, articlesAchete($user_ID));
                     $phone = $user->billing_phone;
                     array_push($fields, $phone);
                     fputcsv($outstream, $fields);  //output the user info line to the csv file
@@ -306,17 +281,15 @@ function export_learndash_courses()
  */
 function my_custom_menu_page()
 {
-    echo '<div id="wpbody-content"><div class="wrap"> <h1 class="wp-heading-inline">Exporter les informations des utilisateurs</h1><br><p>les membres de l\'équipe ne seront pas inclus</div></div>';
-    echo '<div id="wpbody-content"><div class="wrap"> <h1 class="wp-heading-inline">Exporter les informations des utilisateurs</h1><br><p>les membres de l\'équipe ne seront pas inclus</div></div>';
     echo export_learndash_courses();
     echo export_learndash_groupes();
 }
 /*
   Last Activity push
  */
-function last_user_activity($user_ID,  $groupid, &$fields)
+function last_user_activity($user_ID,  $courseid, &$fields)
 {
-    $lastActivity = learndash_activity_course_get_latest_completed_step($user_ID,  $groupid,)[activity_completed];
+    $lastActivity = learndash_activity_course_get_latest_completed_step($user_ID,  $courseid,)[activity_completed];
     if ($lastActivity) {
         $lastActivitydate = wp_date('d-m-Y', $lastActivity);
         array_push($fields, $lastActivitydate);
